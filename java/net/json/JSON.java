@@ -13,7 +13,6 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -23,8 +22,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
-
-import org.lwjgl.input.Keyboard;
 
 import net.json.stairs.InnerStairs;
 import net.json.stairs.OuterStairs;
@@ -36,14 +33,13 @@ public class JSON extends JFrame {
 	public JTextField modIDField, nameField, texNameField, directoryField;
 	public JLabel modID, name, textureName, copy, version, dir;
 	public JButton exit, generate, openDir;
-	public JCheckBox block, tool, sameTex, reset, stairs, flower;
+	public JCheckBox block, tool, sameTex, reset, stairs, flower, readConfig;
 	public boolean showConsole, isBlock, isStairs, isFlower;
 	protected BufferedWriter itemModelWriter, blockModelWriter, blockStateWriter, configWriter;
 	public static final int WIDTH = 860;
 	public static final int HEIGHT = 600;
 	public JPopupMenu popup;
 	public static JSON instance = new JSON();
-	public DefaultComboBoxModel dropBox;
 	
 	public static void main(String[] s) {
 		//json j = new json();
@@ -63,10 +59,8 @@ public class JSON extends JFrame {
 		flower = new JCheckBox("Is it crossed like a flower?");
 		flower.addActionListener(new CheckBoxListener());
 		popup = new JPopupMenu("Error!");
-
-		dropBox = new DefaultComboBoxModel();
-		
-		dropBox.addElement("essence");
+		readConfig = new JCheckBox("Read the MODID and the Directory from the config?");
+		readConfig.addActionListener(new CheckBoxListener());
 		
 		ImageIcon icon = new ImageIcon("./icon.png");
 
@@ -107,6 +101,7 @@ public class JSON extends JFrame {
 		pane.add(tool);
 		pane.add(sameTex);
 		pane.add(reset);
+		pane.add(readConfig);
 		pane.add(generate);
 		pane.add(openDir);
 		pane.add(exit);
@@ -158,11 +153,8 @@ public class JSON extends JFrame {
 				e.printStackTrace();
 			}
 
-			boolean isTexSame = sameTex.isSelected();
-			String name = isTexSame ? nameField.getText() : texNameField.getText();
-
-			//if(sameTex.isSelected() && texNameField.getText().equals(""))
-			//	texNameField = nameField;
+			if(sameTex.isSelected() || texNameField.getText().equals(""))
+				texNameField = nameField;
 			
 			if(block.isSelected() && !tool.isSelected()) {
 				if(!stairs.isSelected() && !flower.isSelected()) {
@@ -182,7 +174,7 @@ public class JSON extends JFrame {
 			}
 
 			if(!block.isSelected() && !tool.isSelected()) {
-				Items.instance.getNormalItem(modIDField, name);
+				Items.instance.getNormalItem(modIDField, texNameField.getText().equals("") ? nameField.getText() : texNameField.getText());
 			}
 
 			if(tool.isSelected() && block.isSelected()){
@@ -287,7 +279,7 @@ public class JSON extends JFrame {
 	public String readConfig(){
 		BufferedReader br = null;
 		try {
-			br = new BufferedReader(new FileReader("./config.properties"));
+			br = new BufferedReader(new FileReader("./config.txt"));
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -342,8 +334,19 @@ public class JSON extends JFrame {
 
 		@Override
 		public void actionPerformed(ActionEvent arg0) {
-			JCheckBox box = (JCheckBox)arg0.getSource();
 			if(stairs.isSelected() || flower.isSelected()) block.setSelected(true);
+			if(readConfig.isSelected()) {
+				directoryField.setText(getDirectory());
+				modIDField.setText(getModID());
+			}
+		}
+
+		private String getDirectory() {
+			return readConfig().substring(10, 72);
+		}
+		
+		private String getModID() {
+			return readConfig().substring(79, 90);
 		}
 	}
 }
